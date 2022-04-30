@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -442,10 +443,16 @@ func (s *server) RestartNode(ctx context.Context, req *rpcpb.RestartNodeRequest)
 		return nil, ErrNodeNotFound
 	}
 	nodeConfig := oldNodeConfig
+	portRegExp := regexp.MustCompile(`\"http-port\":\d+\s`)
+	colon := regexp.MustCompile(":")
+	oldPortParamDeclaration := portRegExp.FindString(nodeConfig.ConfigFile)
+	oldPort := colon.Split(oldPortParamDeclaration, 2)[1]
 
+	fmt.Println("Port of the working node, that we need to remove: ", oldPort)
 	// keep everything same except config file and binary path
 	nodeInfo.ExecPath = req.StartRequest.ExecPath
 	nodeInfo.WhitelistedSubnets = *req.StartRequest.WhitelistedSubnets
+
 	nodeConfig.ConfigFile = fmt.Sprintf(`{
 	"network-peer-list-gossip-frequency":"250ms",
 	"network-max-reconnect-delay":"1s",
@@ -458,11 +465,13 @@ func (s *server) RestartNode(ctx context.Context, req *rpcpb.RestartNodeRequest)
 	"log-level":"INFO",
 	"log-dir":"%s",
 	"db-dir":"%s",
-	"whitelisted-subnets":"%s"
+	"whitelisted-subnets":"%s",
+	"http-port":%s
 }`,
 		nodeInfo.LogDir,
 		nodeInfo.DbDir,
 		nodeInfo.WhitelistedSubnets,
+		oldPort,
 	)
 	nodeConfig.ImplSpecificConfig = json.RawMessage(fmt.Sprintf(`{"binaryPath":"%s","redirectStdout":true,"redirectStderr":true}`, nodeInfo.ExecPath))
 

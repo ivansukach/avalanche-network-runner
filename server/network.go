@@ -68,7 +68,7 @@ func newNetwork(execPath string, rootDataDir string, whitelistedSubnets string, 
 		nodeName := fmt.Sprintf("node%d", i+1)
 		logDir := filepath.Join(rootDataDir, nodeName, "log")
 		dbDir := filepath.Join(rootDataDir, nodeName, "db-dir")
-
+		port := 9650 + i*2
 		nodeNames[i] = nodeName
 		cfg.NodeConfigs[i].Name = nodeName
 
@@ -86,12 +86,14 @@ func newNetwork(execPath string, rootDataDir string, whitelistedSubnets string, 
 	"log-level":"%s",
 	"log-dir":"%s",
 	"db-dir":"%s",
-	"whitelisted-subnets":"%s"
+	"whitelisted-subnets":"%s",
+	"http-port":%d
 }`,
 			strings.ToUpper(logLevel),
 			logDir,
 			dbDir,
 			whitelistedSubnets,
+			port,
 		)
 		cfg.NodeConfigs[i].ImplSpecificConfig = json.RawMessage(fmt.Sprintf(`{"binaryPath":"%s","redirectStdout":true,"redirectStderr":true}`, execPath))
 
